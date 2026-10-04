@@ -5,10 +5,8 @@ BOT_TOKEN = "8839137520:AAH4b1X74EV4Cpp0eoeTfMfRw_GapDjZVQ8"
 SMS_API_KEY = "osms_7f193a3fe65448a9380061c1b56e9fdc29f49c67e89eb3dd"
 SMS_API_URL = "https://onaylasms.com.tr/stubs/handler_api.php"
 
-# Yönetici ID'leri (Kendi Telegram ID'nizi buraya yazın ki panel yetkiniz olsun)
-ADMIN_IDS = [8835514842
-    123456789,
-]  # <--- Buraya kendi Telegram ID'nizi yazın
+# Yönetici ID'niz
+ADMIN_IDS = [8835514842]
 
 # IBAN Bilgileri
 IBAN_INFO = (
@@ -18,7 +16,7 @@ IBAN_INFO = (
     "⚠️ Ödeme yaptıktan sonra dekontu veya işlem onay ekranını yöneticiye iletin."
 )
 
-# Servis Tanımları ve Satış Fiyatları (API Servis Kodları ve Müşteri Satış Fiyatları)
+# Servis Tanımları ve Satış Fiyatları
 SERVICES = {
     "tr_wa": {
         "name": "Türkiye WhatsApp",
