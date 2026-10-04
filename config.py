@@ -15,7 +15,7 @@ IBAN_INFO = (
     "• **IBAN:** `TR62 0006 2000 5000 0006 8107 73`\n"
 )
 
-# Son derece şık, VIP görünümlü bayraklı ürün kataloğu
+# Şık ve VIP görünümlü bayraklı ürün kataloğu
 SERVICES = {
     "tr_wa": {
         "name": "🇹🇷 Türkiye | WhatsApp",
