@@ -4,21 +4,20 @@ BOT_TOKEN = "8839137520:AAH4b1X74EV4Cpp0eoeTfMfRw_GapDjZVQ8"
 SMS_API_KEY = "osms_7f193a3fe65448a9380061c1b56e9fdc29f49c67e89eb3dd"
 SMS_API_URL = "https://onaylasms.com.tr/stubs/handler_api.php"
 
+# Senin Admin / Yönetici Telegram ID'n
 ADMIN_IDS = [8835514842]
 
-# Canlı Destek / İletişim Hesabınız
-SUPPORT_USERNAME = "ResulSakal"  # Kendi kullanıcı adınızı yazın
+SUPPORT_USERNAME = "ResulSakal"
 
-# IBAN Bilgileri
+# IBAN ve Ödeme Bilgileri
 IBAN_INFO = (
-    "🏦 **Banka Havale / EFT Bilgileri**\n\n"
+    "🏦 **ÖDEME BİLGİLERİ**\n\n"
     "• **Banka:** Ziraat Bankası / Diğer\n"
     "• **Alıcı Adı Soyadı:** Resul Sakal\n"
-    "• **IBAN:** `TR62 0006 2000 5000 0006 8107 73`\n\n"
-    "📌 *Ödeme yaparken açıklama kısmına Telegram ID'nizi yazabilirsiniz.*"
+    "• **IBAN:** `TR62 0006 2000 5000 0006 8107 73`\n"
 )
 
-# VIP Görünümlü, Bayraklı ve Net Fiyatlı Servisler
+# VIP Bayraklı Servisler ve Fiyatlar
 SERVICES = {
     "tr_wa": {
         "name": "🇹🇷 Türkiye WhatsApp",
