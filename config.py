@@ -4,7 +4,8 @@ ADMIN_IDS = [8835514842]  # Telegram bildiriminin gideceği senin ID'n
 SMS_API_KEY = "osms_7f193a3fe65448a9380061c1b56e9fdc29f49c67e89eb3dd"
 SMS_API_URL = "https://onaylasms.com.tr/stubs/handler_api.php"
 
-# İstediğin Admin Panel Şifresi
+# İstediğin Admin Bilgileri
+ADMIN_USER = "adim"
 ADMIN_PASSWORD = "aklomanti"
 
 SUPPORT_USERNAME = "vipanka"
