@@ -1,21 +1,19 @@
-BOT_TOKEN = "8999805288:AAE4r0PoB2Aw_dEHNpETgGUyRlTeWZQoBms"
 SMS_API_KEY = "osms_7f193a3fe65448a9380061c1b56e9fdc29f49c67e89eb3dd"
 SMS_API_URL = "https://onaylasms.com.tr/stubs/handler_api.php"
 
-# Senin Admin Telegram ID'n
-ADMIN_IDS = [8835514842]
+# Panel Şifren (Panele girerken bu şifreyi soracak)
+ADMIN_PASSWORD = "resul"
 
 SUPPORT_USERNAME = "vipanka"
 
 # IBAN Bilgileri
-IBAN_INFO = (
-    "💎 **VIP ÖDEME BİLGİLERİ (HAVALE / EFT)** 💎\n\n"
-    "• **Banka:** Ziraat Bankası / Diğer\n"
-    "• **Alıcı Adı Soyadı:** Resul Sakal\n"
-    "• **IBAN:** `TR62 0006 2000 5000 0006 8107 73`\n"
-)
+IBAN_INFO = {
+    "bank": "Ziraat Bankası / Diğer",
+    "name": "Resul Sakal",
+    "iban": "TR62 0006 2000 5000 0006 8107 73",
+}
 
-# Şık ve VIP görünümlü bayraklı ürün kataloğu
+# VIP Ürün Kataloğu
 SERVICES = {
     "tr_wa": {
         "name": "🇹🇷 Türkiye | WhatsApp",
