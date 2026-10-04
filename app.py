@@ -4,7 +4,6 @@ import requests
 from config import (
     ADMIN_IDS,
     ADMIN_PASSWORD,
-    ADMIN_USER,
     BOT_TOKEN,
     IBAN_INFO,
     SERVICES,
@@ -98,7 +97,6 @@ def telegram_webhook():
         update_deposit_status(req_id, "rejected")
         resp_text = f"❌ *Talep #{req_id} Reddedildi.*"
 
-      # Telegram mesajını güncelle
       requests.post(
           f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText",
           json={
@@ -111,7 +109,7 @@ def telegram_webhook():
   return "OK", 200
 
 
-# --- CSS & ORTAK ŞABLONLAR (Ultra VIP Mavi Tema & Arka Plan) ---
+# --- CSS & ORTAK ŞABLONLAR ---
 
 BASE_STYLE = """
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -174,7 +172,6 @@ BASE_STYLE = """
     }
     .support-badge:hover { color: white; transform: scale(1.05); }
 
-    /* Animasyonlu Karşılama Ekranı */
     #loader-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: #030712; display: flex; flex-direction: column;
@@ -298,10 +295,35 @@ INDEX_HTML = (
             <div class="d-flex align-items-center gap-2 gap-md-3">
                 <span class="badge-balance small"><i class="fa-solid fa-wallet me-1"></i> {{ user.balance }} TL</span>
                 <a href="/deposit" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-plus me-1"></i> Bakiye Yükle</a>
+                <button class="btn btn-warning btn-sm fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#adminModal"><i class="fa-solid fa-shield-halved me-1"></i> Admin Paneli</button>
                 <a href="/logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i></a>
             </div>
         </div>
     </nav>
+
+    <!-- Admin Şifre Modal Penceresi -->
+    <div class="modal fade" id="adminModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-vip p-3">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-info fw-bold"><i class="fa-solid fa-lock me-2"></i>Admin Paneli Doğrulama</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <form action="/admin/verify" method="POST">
+                    <div class="modal-body">
+                        {% if admin_error %}
+                            <div class="alert alert-danger py-2 small">Şifre hatalı!</div>
+                        {% endif %}
+                        <p class="text-muted small">Yönetim paneline erişmek için lütfen admin şifresini girin:</p>
+                        <input type="password" name="admin_password" class="form-control bg-dark text-white border-secondary" placeholder="Admin Şifresi" required autofocus>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-vip w-100 py-2">GİRİŞ YAP</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <div class="container my-5 px-3">
         <div class="text-center mb-5">
@@ -428,48 +450,6 @@ ORDER_SUCCESS_HTML = (
 """
 )
 
-ADMIN_LOGIN_HTML = (
-    """
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Giriş - Anka Onay</title>
-    """
-    + BASE_STYLE
-    + """
-</head>
-<body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
-    <div class="container" style="max-width: 400px;">
-        <div class="card-vip p-4 shadow-lg">
-            <h3 class="fw-bold text-center text-info mb-4"><i class="fa-solid fa-lock me-2"></i>YÖNETİCİ GİRİŞİ</h3>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for cat, msg in messages %}
-                        <div class="alert alert-danger py-2 small">{{ msg }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <form method="POST">
-                <div class="mb-3">
-                    <label class="form-label text-muted small">Kullanıcı Adı</label>
-                    <input type="text" name="username" class="form-control bg-dark text-white border-secondary" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-muted small">Şifre</label>
-                    <input type="password" name="password" class="form-control bg-dark text-white border-secondary" required>
-                </div>
-                <button type="submit" class="btn btn-vip w-100 py-2">GİRİŞ YAP</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
-"""
-)
-
 ADMIN_PANEL_HTML = """
 <!DOCTYPE html>
 <html lang="tr">
@@ -488,7 +468,10 @@ ADMIN_PANEL_HTML = """
 <body>
     <nav class="navbar navbar-dark px-3 py-3 bg-dark border-bottom border-secondary">
         <a class="navbar-brand fw-bold text-info fs-6" href="/admin/panel"><i class="fa-solid fa-crown me-2"></i>YÖNETİM PANELİ</a>
-        <a href="/admin/logout" class="btn btn-outline-danger btn-sm">Çıkış Yap</a>
+        <div class="d-flex gap-2">
+            <a href="/" class="btn btn-outline-info btn-sm">Müşteri Paneline Dön</a>
+            <a href="/admin/logout" class="btn btn-outline-danger btn-sm">Paneli Kapat</a>
+        </div>
     </nav>
 
     <div class="container my-5 px-3">
@@ -622,6 +605,26 @@ def index():
   )
 
 
+@app.route("/admin/verify", methods=["POST"])
+def admin_verify():
+  if not session.get("user_id"):
+    return redirect(url_for("auth_page"))
+
+  entered_password = request.form.get("admin_password")
+  if entered_password == ADMIN_PASSWORD:
+    session["admin"] = True
+    return redirect(url_for("admin_panel"))
+  else:
+    user = get_user_by_id(session["user_id"])
+    return render_template_string(
+        INDEX_HTML,
+        user=user,
+        services=SERVICES,
+        support_username=SUPPORT_USERNAME,
+        admin_error=True,
+    )
+
+
 @app.route("/auth")
 def auth_page():
   if session.get("user_id"):
@@ -661,6 +664,7 @@ def register():
 @app.route("/logout")
 def logout():
   session.pop("user_id", None)
+  session.pop("admin", None)
   return redirect(url_for("auth_page"))
 
 
@@ -679,8 +683,6 @@ def deposit():
     if amount > 0 and fullname:
       user = get_user_by_id(session["user_id"])
       req_id = create_deposit_request(user[0], amount, fullname)
-
-      # Telegram Botuna İnline Butonlu Bildirim Gönder
       send_telegram_deposit_notification(req_id, user[1], fullname, amount)
 
       from flask import flash
@@ -785,29 +787,13 @@ def sms_check(act_id):
     return f"Hata: {str(e)}"
 
 
-# --- ADMIN PANELİ (Kullanıcı Adı: anka, Şifre: admin) ---
-
-
-@app.route("/admin", methods=["GET", "POST"])
-def admin_login():
-  if request.method == "POST":
-    if (
-        request.form.get("username") == ADMIN_USER
-        and request.form.get("password") == ADMIN_PASSWORD
-    ):
-      session["admin"] = True
-      return redirect(url_for("admin_panel"))
-    else:
-      from flask import flash
-
-      flash("Kullanıcı adı veya şifre hatalı!", "error")
-  return render_template_string(ADMIN_LOGIN_HTML)
+# --- ADMIN PANELİ ROTALARI ---
 
 
 @app.route("/admin/panel")
 def admin_panel():
   if not session.get("admin"):
-    return redirect(url_for("admin_login"))
+    return redirect(url_for("index"))
 
   users = get_all_users()
   deposits = get_all_deposits()
@@ -825,7 +811,7 @@ def admin_panel():
 @app.route("/admin/deposit/approve/<int:req_id>")
 def admin_approve_deposit(req_id):
   if not session.get("admin"):
-    return redirect(url_for("admin_login"))
+    return redirect(url_for("index"))
 
   dep = get_deposit_request(req_id)
   if dep and dep[4] == "pending":
@@ -838,7 +824,7 @@ def admin_approve_deposit(req_id):
 @app.route("/admin/deposit/reject/<int:req_id>")
 def admin_reject_deposit(req_id):
   if not session.get("admin"):
-    return redirect(url_for("admin_login"))
+    return redirect(url_for("index"))
 
   dep = get_deposit_request(req_id)
   if dep and dep[4] == "pending":
@@ -850,7 +836,7 @@ def admin_reject_deposit(req_id):
 @app.route("/admin/user/balance/<int:user_id>", methods=["POST"])
 def admin_manual_balance(user_id):
   if not session.get("admin"):
-    return redirect(url_for("admin_login"))
+    return redirect(url_for("index"))
 
   try:
     new_bal = float(request.form.get("new_balance"))
@@ -864,7 +850,7 @@ def admin_manual_balance(user_id):
 @app.route("/admin/logout")
 def admin_logout():
   session.pop("admin", None)
-  return redirect(url_for("admin_login"))
+  return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
