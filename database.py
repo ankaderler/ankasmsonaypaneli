@@ -7,29 +7,23 @@ def init_db():
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
 
+  # Kullanıcı kayıt / web panel tarzı kullanıcı tablosu
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
-            balance REAL DEFAULT 0.0
+            username TEXT,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-  # Bekleyen ödeme / dekont bildirimleri
+  # Bekleyen / Onaylanan Siparişler Tablosu
   cursor.execute("""
-        CREATE TABLE IF NOT EXISTS pending_payments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS orders (
+            order_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            amount REAL,
-            status TEXT DEFAULT 'pending'
-        )
-    """)
-
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS activations (
-            activation_id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            phone_number TEXT,
-            service_key TEXT
+            service_key TEXT,
+            price REAL,
+            status TEXT DEFAULT 'pending_payment'
         )
     """)
 
@@ -37,37 +31,49 @@ def init_db():
   conn.close()
 
 
-def get_user_balance(user_id):
+def register_user(user_id, username):
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
-  cursor.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-  row = cursor.fetchone()
-  if not row:
-    cursor.execute(
-        "INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0.0)
-    )
-    conn.commit()
-    balance = 0.0
-  else:
-    balance = row[0]
+  cursor.execute(
+      "INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)",
+      (user_id, username),
+  )
+  conn.commit()
   conn.close()
-  return balance
 
 
-def update_user_balance(user_id, amount):
+def create_order(user_id, service_key, price):
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
-  cursor.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
+  cursor.execute(
+      "INSERT INTO orders (user_id, service_key, price, status) VALUES (?, ?,"
+      " ?, 'pending_payment')",
+      (user_id, service_key, price),
+  )
+  order_id = cursor.lastrowid
+  conn.commit()
+  conn.close()
+  return order_id
+
+
+def get_order(order_id):
+  conn = sqlite3.connect(DB_NAME)
+  cursor = conn.cursor()
+  cursor.execute(
+      "SELECT user_id, service_key, price, status FROM orders WHERE order_id ="
+      " ?",
+      (order_id,),
+  )
   row = cursor.fetchone()
-  if not row:
-    cursor.execute(
-        "INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, amount)
-    )
-  else:
-    new_balance = row[0] + amount
-    cursor.execute(
-        "UPDATE users SET balance = ? WHERE user_id = ?",
-        (new_balance, user_id),
-    )
+  conn.close()
+  return row
+
+
+def update_order_status(order_id, status):
+  conn = sqlite3.connect(DB_NAME)
+  cursor = conn.cursor()
+  cursor.execute(
+      "UPDATE orders SET status = ? WHERE order_id = ?", (status, order_id)
+  )
   conn.commit()
   conn.close()
