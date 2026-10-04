@@ -7,7 +7,6 @@ def init_db():
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
 
-  # Kullanıcılar tablosu
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -15,9 +14,9 @@ def init_db():
         )
     """)
 
-  # Bakiye talepleri tablosu
+  # Bekleyen ödeme / dekont bildirimleri
   cursor.execute("""
-        CREATE TABLE IF NOT EXISTS deposit_requests (
+        CREATE TABLE IF NOT EXISTS pending_payments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             amount REAL,
@@ -25,7 +24,6 @@ def init_db():
         )
     """)
 
-  # Aktif aktivasyonlar tablosu
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS activations (
             activation_id TEXT PRIMARY KEY,
