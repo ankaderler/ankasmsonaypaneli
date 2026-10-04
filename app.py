@@ -70,7 +70,7 @@ def send_telegram_deposit_notification(req_id, username, fullname, amount):
       pass
 
 
-# Telegram Webhook / Güncelleme Yakalayıcı (Bot üzerinden onay/ret için)
+# Telegram Webhook / Güncelleme Yakalayıcı (Bot üzerinden onay/ret)
 @app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
 def telegram_webhook():
   data = request.get_json()
@@ -111,7 +111,7 @@ def telegram_webhook():
   return "OK", 200
 
 
-# --- CSS & ORTAK ŞABLONLAR (Mavi VIP Tema & Animasyonlu Giriş) ---
+# --- CSS & ORTAK ŞABLONLAR (Ultra VIP Mavi Tema & Arka Plan) ---
 
 BASE_STYLE = """
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -121,62 +121,65 @@ BASE_STYLE = """
     :root {
         --primary-blue: #0ea5e9;
         --dark-bg: #030712;
-        --card-bg: #0b1329;
-        --border-blue: rgba(14, 165, 233, 0.3);
+        --card-bg: rgba(11, 19, 41, 0.85);
+        --border-blue: rgba(14, 165, 233, 0.4);
     }
     body { 
-        background: radial-gradient(circle at 50% 20%, #0f172a 0%, #030712 100%); 
+        background: radial-gradient(circle at 50% 10%, #0d1b3a 0%, #030712 100%); 
         color: #f1f5f9; 
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
         min-height: 100vh;
+        background-attachment: fixed;
     }
-    .navbar { background: rgba(11, 19, 41, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-blue); }
+    .navbar { background: rgba(7, 13, 28, 0.95); backdrop-filter: blur(15px); border-bottom: 1px solid var(--border-blue); }
     .card-vip { 
         background: var(--card-bg); 
+        backdrop-filter: blur(10px);
         border: 1px solid var(--border-blue); 
-        border-radius: 16px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+        border-radius: 18px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.7); 
         transition: all 0.3s ease; 
     }
     .card-vip:hover { 
-        border-color: var(--primary-blue); 
-        transform: translateY(-5px); 
-        box-shadow: 0 15px 35px rgba(14, 165, 233, 0.2);
+        border-color: #38bdf8; 
+        transform: translateY(-4px); 
+        box-shadow: 0 20px 40px rgba(14, 165, 233, 0.25);
     }
     .btn-vip { 
         background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); 
         color: #fff; 
         font-weight: 700; 
         border: none; 
-        border-radius: 10px; 
-        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        border-radius: 12px; 
+        box-shadow: 0 5px 20px rgba(14, 165, 233, 0.5);
     }
     .btn-vip:hover { 
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+        background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); 
         color: #fff; 
     }
     .badge-balance { 
-        background: rgba(14, 165, 233, 0.15); 
+        background: rgba(14, 165, 233, 0.2); 
         color: #38bdf8; 
-        border: 1px solid rgba(14, 165, 233, 0.4); 
-        padding: 6px 14px; 
+        border: 1px solid rgba(14, 165, 233, 0.5); 
+        padding: 6px 16px; 
         border-radius: 30px; 
         font-weight: bold; 
     }
     .support-badge { 
         position: fixed; bottom: 25px; right: 25px; z-index: 1000; 
-        background: #0ea5e9; color: white; padding: 12px 22px; 
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); 
+        color: white; padding: 12px 24px; 
         border-radius: 50px; text-decoration: none; font-weight: bold; 
-        box-shadow: 0 6px 20px rgba(14,165,233,0.5); 
+        box-shadow: 0 8px 25px rgba(14,165,233,0.6); 
     }
-    .support-badge:hover { color: white; background: #0284c7; }
+    .support-badge:hover { color: white; transform: scale(1.05); }
 
     /* Animasyonlu Karşılama Ekranı */
     #loader-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: #030712; display: flex; flex-direction: column;
         justify-content: center; align-items: center; z-index: 9999;
-        animation: fadeOut 0.8s ease 1.2s forwards;
+        animation: fadeOut 0.8s ease 1s forwards;
     }
     .loader-logo {
         font-size: 2.5rem; font-weight: bold; color: #38bdf8;
@@ -184,7 +187,7 @@ BASE_STYLE = """
     }
     @keyframes pulseGlow {
         0% { text-shadow: 0 0 10px rgba(14,165,233,0.3); transform: scale(1); }
-        100% { text-shadow: 0 0 25px rgba(14,165,233,0.8); transform: scale(1.05); }
+        100% { text-shadow: 0 0 30px rgba(14,165,233,0.9); transform: scale(1.06); }
     }
     @keyframes fadeOut {
         to { opacity: 0; visibility: hidden; }
@@ -303,7 +306,7 @@ INDEX_HTML = (
     <div class="container my-5 px-3">
         <div class="text-center mb-5">
             <h1 class="fw-bold display-6 text-info">✨ ELİT ÜRÜN & NUMARA KATALOĞU ✨</h1>
-            <p class="text-muted small md-fs-6">Bakiyenizle anında numara satın alabilir, sistemden SMS kodunuzu anında çekebilirsiniz.</p>
+            <p class="text-muted small">Bakiyenizle anında numara satın alabilir, sistemden SMS kodunuzu anında çekebilirsiniz.</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -367,7 +370,7 @@ DEPOSIT_HTML = (
                 <h5 class="text-info mb-3">🏦 IBAN Bilgileri</h5>
                 <p class="mb-1">Banka: <strong>{{ iban.bank }}</strong></p>
                 <p class="mb-1">Alıcı: <strong>{{ iban.name }}</strong></p>
-                <p class="mb-0">IBAN: <code class="text-info fs-6 fs-md-5">{{ iban.iban }}</code></p>
+                <p class="mb-0">IBAN: <code class="text-info fs-6">{{ iban.iban }}</code></p>
             </div>
 
             <p class="text-muted small">Lütfen IBAN'a ödemeyi yaptıktan sonra aşağıdaki alanlara <strong>kendi adınızı soyadınızı</strong> ve <strong>yatırdığınız tutarı</strong> yazıp bildirim gönderin.</p>
@@ -478,7 +481,7 @@ ADMIN_PANEL_HTML = """
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #030712; color: #f1f5f9; font-family: 'Segoe UI'; }
-        .card { background: #0b1329; border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; }
+        .card { background: rgba(11, 19, 41, 0.9); border: 1px solid rgba(14, 165, 233, 0.4); border-radius: 14px; backdrop-filter: blur(10px); }
         .table { color: #f1f5f9; }
     </style>
 </head>
@@ -782,7 +785,7 @@ def sms_check(act_id):
     return f"Hata: {str(e)}"
 
 
-# --- ADMIN PANELİ (Kullanıcı Adı: adim, Şifre: aklomanti) ---
+# --- ADMIN PANELİ (Kullanıcı Adı: anka, Şifre: admin) ---
 
 
 @app.route("/admin", methods=["GET", "POST"])
