@@ -1,4 +1,7 @@
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
+import os
+import threading
 import requests
 from config import ADMIN_IDS, IBAN_INFO, SERVICES, SMS_API_KEY, SMS_API_URL, SUPPORT_USERNAME, BOT_TOKEN
 from database import create_order, get_order, init_db, register_user, update_order_status
@@ -8,13 +11,29 @@ from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
-    MessageHandler,
-    filters,
 )
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
+
+
+# Render panelinin "Live" vermesi için hafif web sunucusu
+class SimpleHandler(BaseHTTPRequestHandler):
+
+  def do_GET(self):
+    self.send_response(200)
+    self.end_headers()
+    self.wfile.write(b"Anka Onay Bot is alive and running!")
+
+  def log_message(self, format, *args):
+    pass  # Gereksiz HTTP log kirliliğini önler
+
+
+def run_web_server():
+  port = int(os.environ.get("PORT", 10000))
+  server = HTTPServer(("0.0.0.0", port), SimpleHandler)
+  server.serve_forever()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -24,25 +43,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
   keyboard = [
       [
           InlineKeyboardButton(
-              "🌐 Web Panel & Ürün Kataloğu", callback_data="catalog"
+              "👑 VIP ÜRÜN KATALOĞU & NUMARA AL", callback_data="catalog"
           )
       ],
       [
           InlineKeyboardButton(
-              "💬 Canlı Destek", url=f"https://t.me/{SUPPORT_USERNAME}"
+              "💬 7/24 Canlı Destek", url=f"https://t.me/{SUPPORT_USERNAME}"
           )
       ],
   ]
   reply_markup = InlineKeyboardMarkup(keyboard)
 
   welcome_text = (
-      f"🌐 **ANKA ONAY WEB PANELİNE HOŞ GELDİNİZ** 🌐\n\n"
-      f"━━━━━━━━━━━━━━━━━━━\n"
-      f"👤 **Kayıtlı Kullanıcı:** `{user.first_name}`\n"
+      f"✨ **ANKA ONAY PREMİUM SİSTEMİNE HOŞ GELDİNİZ** ✨\n\n"
+      f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+      f"👤 **Müşteri:** `{user.first_name}`\n"
       f"🆔 **ID:** `{user.id}`\n"
-      f"━━━━━━━━━━━━━━━━━━━\n\n"
-      f"Sistemimiz tam otomatik web panel mantığıyla çalışır. "
-      f"Ürün seçip ödemenizi yaptıktan sonra bildirim atarsınız, onaylandığı an numaranız anında teslim edilir."
+      f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+      f"🔥 Piyasanın en hızlı ve güvenilir SMS onay servisindesiniz.\n"
+      f"🚀 Alışverişe başlamak için aşağıdaki **VIP Ürün Kataloğu** butonuna tıklayın."
   )
 
   if update.message:
@@ -66,18 +85,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for key, val in SERVICES.items():
       keyboard.append([
           InlineKeyboardButton(
-              f"{val['name']} ➔ 🏷 {val['price']} TL", callback_data=f"sel_{key}"
+              f"✨ {val['name']} ➔ 💰 {val['price']} TL",
+              callback_data=f"sel_{key}",
           )
       ])
     keyboard.append(
-        [InlineKeyboardButton("🔙 Ana Menü", callback_data="main_menu")]
+        [InlineKeyboardButton("🔙 Ana Menüye Dön", callback_data="main_menu")]
     )
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(
         text=(
-            "📦 **WEB PANEL ÜRÜN LİSTESİ**\n\n"
-            "Satın almak istediğiniz servise tıklayarak ödeme detaylarına"
-            " ulaşabilirsiniz:"
+            "💎 **VIP ÜRÜN VE SERVİS KATALOĞU** 💎\n\n"
+            "Lütfen sahip olmak istediğiniz numarayı seçin:\n"
+            "👇 *Seçtiğiniz ürünün fiyatı ve IBAN bilgileri ekrana gelecektir.*"
         ),
         reply_markup=reply_markup,
         parse_mode="Markdown",
@@ -88,7 +108,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     service_info = SERVICES.get(srv_key)
     price = service_info["price"]
 
-    # Sipariş oluştur (Bekliyor durumunda)
     order_id = create_order(user_id, srv_key, price)
 
     keyboard = [
@@ -98,16 +117,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 callback_data=f"paid_{order_id}",
             )
         ],
-        [InlineKeyboardButton("🔙 Ürünlere Dön", callback_data="catalog")],
+        [InlineKeyboardButton("🔙 Ürün Kataloğuna Dön", callback_data="catalog")],
     ]
     await query.edit_message_text(
         text=(
-            f"🛒 **SİPARİŞ VE ÖDEME EKRANI**\n\n"
+            f"🛒 **SİPARİŞ VE ÖDEME ONAY EKRANI**\n\n"
             f"📦 Seçilen Ürün: **{service_info['name']}**\n"
-            f"💵 Ödenecek Tutar: **{price} TL**\n"
-            f"🆔 Sipariş No: `#{order_id}`\n\n"
+            f"🏷 Ödenecek Net Tutar: **{price} TL**\n"
+            f"🆔 Sipariş Numarası: `#{order_id}`\n\n"
             f"{IBAN_INFO}\n"
-            f"⚠️ *Lütfen yukarıdaki tutarı IBAN adresine gönderdikten sonra alttaki 'Ödemeyi Yaptım' butonuna basın.*"
+            f"⚠️ **Nasıl Alınır?** Yukarıdaki IBAN adresine tutarı gönderdikten sonra **'Ödemeyi Yaptım / Bildir'** butonuna basın. Yönetici onayından hemen sonra numaranız gelecektir."
         ),
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="Markdown",
@@ -123,14 +142,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     service_info = SERVICES.get(order[1])
 
-    # Admin'e onay bildirimi gönder
+    # Admin'e şık onay/red butonlu bildirim
     admin_text = (
         f"🔔 **YENİ ÖDEME BİLDİRİMİ!**\n\n"
         f"👤 Müşteri ID: `{user_id}`\n"
         f"📦 Ürün: {service_info['name']}\n"
         f"💵 Tutar: {order[2]} TL\n"
         f"🆔 Sipariş ID: `#{order_id}`\n\n"
-        f"Onaylamak veya Reddetmek için aşağıdaki butonları kullanın:"
+        f"Lütfen ödemeyi kontrol edip karar verin:"
     )
 
     admin_keyboard = [
@@ -159,12 +178,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.edit_message_text(
         text=(
-            f"⏳ **Ödeme Bildirimi Alındı!**\n\n"
+            f"⏳ **ÖDEME BİLDİRİMİNİZ ALINDI!**\n\n"
             f"Sipariş No: `#{order_id}`\n"
             f"Yönetici ödemenizi kontrol ediyor. Onaylandığı an numaranız bu sohbet üzerinden otomatik olarak teslim edilecektir."
         ),
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("🔙 Ana Menü", callback_data="main_menu")]]
+            [[InlineKeyboardButton("🔙 Ana Menüye Dön", callback_data="main_menu")]]
         ),
         parse_mode="Markdown",
     )
@@ -174,14 +193,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     order = get_order(order_id)
 
     if not order or order[3] != "pending_payment":
-      await query.answer("Bu sipariş zaten onaylanmış veya işlenmiş!", show_alert=True)
+      await query.answer(
+          "Bu sipariş zaten onaylanmış veya işlem görmüş!", show_alert=True
+      )
       return
 
     target_user_id = order[0]
     srv_key = order[1]
     service_info = SERVICES.get(srv_key)
 
-    # API'den numara çek
+    # API'den numara çekme
     try:
       price_res = requests.get(
           SMS_API_URL,
@@ -236,7 +257,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"📱 **Numara:** `{phone}`\n"
                 f"📦 **Ürün:** {service_info['name']}\n"
                 f"🆔 **Aktivasyon ID:** `{act_id}`\n\n"
-                f"Numarayı uygulamaya girip ardından aşağıdaki butondan SMS kodunu sorgulayabilirsiniz."
+                f"Numarayı uygulamaya yazdıktan sonra aşağıdaki butona basarak SMS kodunu ekranda görebilirsiniz."
             ),
             reply_markup=InlineKeyboardMarkup(client_keyboard),
             parse_mode="Markdown",
@@ -244,20 +265,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             text=(
-                f"✅ Sipariş #{order_id} onaylandı ve numara müşteriye başarıyla"
+                f"✅ Sipariş #{order_id} başarıyla onaylandı ve numara müşteriye"
                 " teslim edildi."
             )
         )
       else:
         await query.edit_message_text(
             text=(
-                f"⚠️ Ödeme onaylandı ancak API'de şu an stok yok! (Sipariş"
+                f"⚠️ Ödeme onaylandı ancak API'de şu an stok bulunmuyor! (Sipariş"
                 f" #{order_id})"
             )
         )
     except Exception as e:
       await query.edit_message_text(
-          text=f"⚠️️ API Hatası: {str(e)} (Sipariş #{order_id})"
+          text=f"⚠️ API Hatası: {str(e)} (Sipariş #{order_id})"
       )
 
   elif data.startswith("adm_no_") and user_id in ADMIN_IDS:
@@ -268,15 +289,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
       update_order_status(order_id, "rejected")
       target_user_id = order[0]
 
-      # Müşteriye reddedildiğini ve canlı desteğe yönlendirildiğini bildir
       try:
         await context.bot.send_message(
             chat_id=target_user_id,
             text=(
                 f"❌ **ÖDEMENİZ ONAYLANMADI / REDDEDİLDİ**\n\n"
                 f"Sipariş No: `#{order_id}`\n"
-                f"Gönderdiğiniz ödeme tespit edilemedi veya hatalı. "
-                f"Lütfen yetkili yönetici ile iletişime geçin: @{SUPPORT_USERNAME}"
+                f"Gönderdiğiniz ödeme tespit edilemedi veya eksik tutar yatırıldı. "
+                f"Lütfen yetkili canlı destek ile iletişime geçin: @{SUPPORT_USERNAME}"
             ),
             parse_mode="Markdown",
         )
@@ -304,7 +324,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         code = status_res.split(":")[1]
         await query.edit_message_text(
             text=(
-                f"🎊 **SMS KODUNUZ GELDİ!**\n\n🔑 Kod: `{code}`\n\nİyi"
+                f"🎊 **SMS KODUNUZ GELDİ!**\n\n🔑 Doğrulama Kodu: `{code}`\n\nİyi"
                 " günlerde kullanın! ❤️"
             ),
             parse_mode="Markdown",
@@ -316,7 +336,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         ]]
         await query.edit_message_text(
-            text="⏳ Henüz SMS gelmedi. Lütfen biraz bekleyip tekrar kontrol edin.",
+            text=(
+                "⏳ **Kod Bekleniyor...**\n\nSMS henüz ulaşmadı. Lütfen"
+                " platformdan kodu tekrar gönderin ve birkaç saniye sonra"
+                " butona tekrar basın."
+            ),
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown",
         )
@@ -330,13 +354,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+  # Render panelinin "Live" statüsüne geçmesi için arka planda web sunucusu başlatıyoruz
+  web_thread = threading.Thread(target=run_web_server, daemon=True)
+  web_thread.start()
+
   init_db()
   app = ApplicationBuilder().token(BOT_TOKEN).build()
 
   app.add_handler(CommandHandler("start", start))
   app.add_handler(CallbackQueryHandler(button_handler))
 
-  print("Web panel mantıklı ödemeli bot aktif edildi...")
+  print("VIP ürün kataloğu ve Render canlı web sunucusu aktif edildi...")
   app.run_polling()
 
 
