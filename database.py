@@ -7,7 +7,6 @@ def init_db():
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
 
-  # Kullanıcılar tablosu
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,18 +17,17 @@ def init_db():
         )
     """)
 
-  # Bakiye yükleme talepleri tablosu
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS deposit_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             amount REAL,
+            fullname TEXT,
             status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-  # Satın alım / siparişler tablosu
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             order_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,12 +106,13 @@ def set_user_balance_manual(user_id, amount):
   conn.close()
 
 
-def create_deposit_request(user_id, amount):
+def create_deposit_request(user_id, amount, fullname):
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
   cursor.execute(
-      "INSERT INTO deposit_requests (user_id, amount) VALUES (?, ?)",
-      (user_id, amount),
+      "INSERT INTO deposit_requests (user_id, amount, fullname) VALUES (?, ?,"
+      " ?)",
+      (user_id, amount, fullname),
   )
   req_id = cursor.lastrowid
   conn.commit()
@@ -125,7 +124,8 @@ def get_deposit_request(req_id):
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
   cursor.execute(
-      "SELECT id, user_id, amount, status FROM deposit_requests WHERE id = ?",
+      "SELECT id, user_id, amount, fullname, status FROM deposit_requests WHERE"
+      " id = ?",
       (req_id,),
   )
   row = cursor.fetchone()
@@ -136,10 +136,6 @@ def get_deposit_request(req_id):
 def update_deposit_status(req_id, status):
   conn = sqlite3.connect(DB_NAME)
   cursor = conn.cursor()
-  cursor.execute(
-      "UPDATE deposit_requests SET status = ? WHERE id = ?", (req_id, status)
-  )
-  # Yukarıdaki sorguda sıra hatasını önlemek için düzeltme:
   cursor.execute(
       "UPDATE deposit_requests SET status = ? WHERE id = ?", (status, req_id)
   )
@@ -176,7 +172,7 @@ def get_all_deposits():
   cursor = conn.cursor()
   cursor.execute(
       """
-        SELECT d.id, u.username, d.amount, d.status, d.created_at, d.user_id 
+        SELECT d.id, u.username, d.amount, d.fullname, d.status, d.created_at, d.user_id 
         FROM deposit_requests d 
         JOIN users u ON d.user_id = u.user_id 
         ORDER BY d.id DESC
